@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { TOTAL_WORK_DAYS } from '../../utils/roadmap.js';
+import { getAvatarDisplayUrl } from '../../lib/avatarUrl.js';
 
 export function GrindTopBar({
   menuOpen,
@@ -10,7 +11,7 @@ export function GrindTopBar({
   user,
   profile,
 }) {
-  const photo = profile?.photoURL || user?.photoURL;
+  const photo = user ? getAvatarDisplayUrl(user, profile) : '';
   const name = profile?.displayName || user?.displayName || 'Account';
 
   return (

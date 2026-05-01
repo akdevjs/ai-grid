@@ -1,64 +1,40 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { updateProfile } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase.js';
+import { db } from '../lib/firebase.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { uploadUserAvatar } from '../lib/uploadAvatar.js';
+import { getAvatarDisplayUrl, isGoogleUser } from '../lib/avatarUrl.js';
 
 export function ProfilePage() {
   const { user, profile, signOut, refreshProfile } = useAuth();
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState('');
-  const [uploading, setUploading] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const displayPhoto = preview || profile?.photoURL || user?.photoURL || '';
+  const displayPhoto = user ? getAvatarDisplayUrl(user, profile) : '';
   const displayName = profile?.displayName || user?.displayName || 'User';
 
-  const onFile = (ev) => {
-    const f = ev.target.files?.[0];
-    setMessage('');
-    setError('');
-    if (!f) {
-      setFile(null);
-      setPreview('');
-      return;
-    }
-    if (!f.type.startsWith('image/')) {
-      setError('Please choose an image file.');
-      return;
-    }
-    if (f.size > 4 * 1024 * 1024) {
-      setError('Image must be under 4 MB.');
-      return;
-    }
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
-  };
-
-  const savePhoto = async () => {
-    if (!file || !user) return;
+  const newRandomAvatar = async () => {
+    if (!user) return;
     setError('');
     setMessage('');
-    setUploading(true);
+    setBusy(true);
     try {
-      const url = await uploadUserAvatar(user.uid, file);
-      await updateProfile(user, { photoURL: url });
+      const seed =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       await setDoc(
         doc(db, 'users', user.uid),
-        { photoURL: url, updatedAt: serverTimestamp() },
+        { avatarSeed: seed, updatedAt: serverTimestamp() },
         { merge: true },
       );
       await refreshProfile();
-      setFile(null);
-      setPreview('');
-      setMessage('Profile picture updated.');
+      setMessage('New avatar applied.');
     } catch (e) {
-      setError(e?.message || 'Upload failed. Check connection and try again.');
+      setError(e?.message || 'Could not update avatar. Try again.');
     } finally {
-      setUploading(false);
+      setBusy(false);
     }
   };
 
@@ -74,7 +50,18 @@ export function ProfilePage() {
         <div className="bg-grind-surface border border-grind-border rounded-2xl p-6 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-grind-accent to-grind-accent2" />
           <h1 className="text-lg font-semibold text-grind-text mb-1">Profile</h1>
-          <p className="text-sm text-grind-muted mb-6">Update your photo anytime.</p>
+          <p className="text-sm text-grind-muted mb-6">
+            Google accounts use your Google photo. Email accounts use a free illustration from{' '}
+            <a
+              href="https://www.dicebear.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-grind-accent2 hover:underline"
+            >
+              DiceBear
+            </a>
+            .
+          </p>
 
           <div className="flex flex-col items-center gap-4 mb-6">
             <div className="w-24 h-24 rounded-full border-2 border-grind-border overflow-hidden bg-grind-surface2">
@@ -99,21 +86,20 @@ export function ProfilePage() {
             </div>
           ) : null}
 
-          <label className="block text-xs font-mono text-grind-muted mb-2">New profile picture</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onFile}
-            className="w-full text-sm text-grind-muted file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-grind-border file:bg-grind-surface2 file:text-grind-text file:text-xs file:cursor-pointer mb-4"
-          />
-          <button
-            type="button"
-            onClick={savePhoto}
-            disabled={!file || uploading}
-            className="w-full py-3 rounded-lg bg-grind-accent border border-grind-accent text-white text-sm font-semibold hover:bg-[#6a4de8] transition disabled:opacity-40 mb-3"
-          >
-            {uploading ? 'Uploading…' : 'Save new photo'}
-          </button>
+          {!user || isGoogleUser(user) ? (
+            <p className="text-xs text-grind-muted mb-4">
+              Signed in with Google — your profile photo comes from Google.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={newRandomAvatar}
+              disabled={busy}
+              className="w-full py-3 rounded-lg bg-grind-accent border border-grind-accent text-white text-sm font-semibold hover:bg-[#6a4de8] transition disabled:opacity-40 mb-3"
+            >
+              {busy ? 'Updating…' : 'New random avatar'}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => signOut()}

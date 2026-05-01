@@ -6,7 +6,12 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
+import {
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+} from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db, getAnalyticsIfSupported } from '../lib/firebase.js';
 
@@ -35,6 +40,7 @@ export function AuthProvider({ children }) {
               email: u.email || '',
               displayName: u.displayName || '',
               photoURL: u.photoURL || '',
+              avatarSeed: u.uid,
               createdAt: serverTimestamp(),
             };
             await setDoc(ref, initial, { merge: true });
