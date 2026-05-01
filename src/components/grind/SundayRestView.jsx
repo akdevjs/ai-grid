@@ -1,8 +1,10 @@
 import { formatLongDate, getNextWorkDayAfterSunday } from '../../utils/roadmap.js';
+import { sameCalendarDay } from '../../utils/dates.js';
 
 export function SundayRestView({ date }) {
   const resumeDay = getNextWorkDayAfterSunday(date);
   const dateStr = formatLongDate(date);
+  const isToday = sameCalendarDay(date, new Date());
 
   return (
     <div className="sun-page" id="sundayPage">
@@ -150,7 +152,7 @@ export function SundayRestView({ date }) {
 
       <div className="rest-tag">☀ SUNDAY</div>
       <div className="rest-title">Chill Out, Boy.</div>
-      <div className="rest-sub">Today is a REST DAY</div>
+      <div className="rest-sub">{isToday ? 'Today is a REST DAY' : 'Scheduled REST DAY'}</div>
       <div className="rest-date">{dateStr}</div>
 
       <div className="rest-msg">
