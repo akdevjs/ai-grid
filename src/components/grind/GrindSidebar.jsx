@@ -13,7 +13,7 @@ export function GrindSidebar({
 
   return (
     <div>
-      {entries.map((entry, idx) => {
+      {entries.map((entry) => {
         if (entry.kind === 'sunday') {
           const active = view.mode === 'sunday' && sameCalendarDay(view.date, entry.date);
           const dateLabel = formatShortDate(entry.date);
