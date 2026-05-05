@@ -1,7 +1,7 @@
 import { phases } from '../data/phases.js';
 
-export const START_DATE = new Date('2026-05-01T12:00:00');
-export const TOTAL_WORK_DAYS = 180;
+export const START_DATE = new Date('2026-05-06T12:00:00');
+export const TOTAL_WORK_DAYS = 183;
 
 /** Flatten phase days */
 function flattenPhases() {
